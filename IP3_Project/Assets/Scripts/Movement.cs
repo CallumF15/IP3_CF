@@ -8,34 +8,69 @@ public class Movement : MonoBehaviour
 		stand,
 		walk,
 		run,
-		jump }
-	;
+		jump,
+		fall
+	};
 
-	public float PlayerSpeed = 5.0f;
+
+	private float normalSpeed = 5.0f;
+	public float walkSpeed = 5.0f;
+	public float runSpeed = 10.0f;
 	public float JumpPower = 3.0f;
-	public float JumpHeight = 10.0f;
-	private double acceleration = 0.2;
-	private Vector2 moveDirection = Vector2.zero;
-	public bool isGrounded = true;
-	float maximumSpeed = 15.0f;
+
+	public bool isGrounded;
+	private bool faceRight = true;
 	bool toggleRun = false;
+
 	movementType defaultType, currentMovement;
 
-
+	private float distanceToGround;
+	RaycastHit hit;
 
 	// Use this for initialization
 	void Start ()
 	{
+		distanceToGround = collider.bounds.extents.y;
 		defaultType = movementType.stand;
 	}
 	
 	// Update is called once per frame
 	void Update ()
 	{
+		CheckMovement ();
 		Move ();
+
+		Debug.Log (currentMovement);
 	}
 
-	void checkMovement ()
+	void FixedUpdate ()
+	{
+		CheckGrounded ();
+		ChangeFacingDirection ();
+	}
+
+	void check ()
+	{
+		//Android/IOS touch code here
+		//iPhoneTouch touch;
+	}
+
+	void ChangeFacingDirection(){
+
+		if (Input.GetAxis ("Horizontal") > 0) 
+			faceRight = true;
+		else
+			if(Input.GetAxis("Horizontal") < 0)
+			faceRight = false;
+
+		if (faceRight)
+			transform.forward = new Vector3(1f, 0f, 0f);
+
+		if (!faceRight)
+			transform.forward = new Vector3(-1f, 0f, 0f);
+	}
+	
+	void CheckMovement ()
 	{
 		var horizontalMovement = 
 			Input.GetAxis ("Horizontal") <= 1 && 
@@ -43,61 +78,54 @@ public class Movement : MonoBehaviour
 			Input.GetAxis ("Horizontal") != 0;
 
 
-		if (Input.GetKey (KeyCode.LeftShift) || Input.GetKey (KeyCode.RightShift))
-			toggleRun = true;
+		if (Input.GetKeyDown (KeyCode.LeftShift) || Input.GetKeyDown (KeyCode.RightShift)) {
+			toggleRun = !toggleRun;
 
-		if (horizontalMovement)
-			currentMovement = movementType.walk;
-		else if (Input.GetKey (KeyCode.Space))
-			currentMovement = movementType.jump;
-		else if (horizontalMovement && toggleRun)
-			currentMovement = movementType.run;
+			if (toggleRun)
+				normalSpeed = runSpeed;
+			else
+				normalSpeed = walkSpeed;
+		}
+
+		if (isGrounded == true) {
+			if (horizontalMovement)
+				currentMovement = movementType.walk;
+			else 
+			if (Input.GetKeyDown (KeyCode.Space))
+				currentMovement = movementType.jump;
+			else 
+				if (horizontalMovement && toggleRun)
+				currentMovement = movementType.run;
+		}
 	}
 
 	/// <summary>
-	/// Left/Right Horizontal Movement
-	/// Jump Vertical Movement
+	/// Left/Right & Jump Movement
 	/// </summary>
 	public void Move ()
 	{
-
 		float horizontal = Input.GetAxis ("Horizontal");
-		Debug.Log ("Axis value: " + horizontal);
 
-		Vector3 movement = new Vector3 (horizontal, 0.0f, 0.0f);
-		rigidbody.velocity = movement * PlayerSpeed;
-
-
-		//Jump code below:
-		
-		if (Input.GetKey (KeyCode.Space) && isGrounded == true) {
-			//rigidbody.AddForce(transform.up * JumpPower);
-
-			rigidbody.AddForce (transform.up * JumpPower, ForceMode.Force);
-
-			if (acceleration < maximumSpeed) {
-
-
-			}
-
-
-			//rigidbody.AddForce(new Vector3(0, 10, 0), ForceMode.Impulse);
-			isGrounded = false;
+		//Horizontal movement code:
+		if (currentMovement == movementType.walk || currentMovement == movementType.run) {
+			Vector3 movement = new Vector3 (horizontal, 0.0f, 0.0f);
+			rigidbody.velocity = movement * normalSpeed;
 		}
 
-		//need to check for ground collision
+		//Jump code:
+		if (currentMovement == movementType.jump && isGrounded == true) {
+			rigidbody.AddForce (Vector3.up * JumpPower, ForceMode.Impulse);
+		}
 	}
-
-	void OnCollisionEnter (Collision hit)
+	
+	void CheckGrounded ()
 	{
-		if (hit.gameObject.tag == "ground") {
+		Debug.DrawRay (transform.position, -Vector3.up); //remove when done testing
+
+		if (Physics.Raycast (transform.position, -Vector3.up, distanceToGround + 0.1f)) {
 			isGrounded = true;
-			Debug.Log ("hit");
-		} else {
-			Debug.Log ("no hit");
+		} else
 			isGrounded = false;
-		}
-			
 	}
 
 }
