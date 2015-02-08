@@ -10,20 +10,18 @@ public class Movement : MonoBehaviour
 		run,
 		jump,
 		fall
-	};
+	}
+	;
 
 
 	private float normalSpeed = 5.0f;
 	public float walkSpeed = 5.0f;
 	public float runSpeed = 10.0f;
 	public float JumpPower = 3.0f;
-
 	public bool isGrounded;
 	private bool faceRight = true;
 	bool toggleRun = false;
-
 	movementType defaultType, currentMovement;
-
 	private float distanceToGround;
 	RaycastHit hit;
 
@@ -55,21 +53,28 @@ public class Movement : MonoBehaviour
 		//iPhoneTouch touch;
 	}
 
-	void ChangeFacingDirection(){
+	/// <summary>
+	/// Changes the facing direction of the model
+	/// </summary>
+	void ChangeFacingDirection ()
+	{
 
 		if (Input.GetAxis ("Horizontal") > 0) 
 			faceRight = true;
 		else
-			if(Input.GetAxis("Horizontal") < 0)
+			if (Input.GetAxis ("Horizontal") < 0)
 			faceRight = false;
 
 		if (faceRight)
-			transform.forward = new Vector3(1f, 0f, 0f);
+			transform.forward = new Vector3 (1f, 0f, 0f);
 
 		if (!faceRight)
-			transform.forward = new Vector3(-1f, 0f, 0f);
+			transform.forward = new Vector3 (-1f, 0f, 0f);
 	}
-	
+
+	/// <summary>
+	/// Checks and assigns the appriopriate movement type
+	/// </summary>
 	void CheckMovement ()
 	{
 		var horizontalMovement = 
@@ -90,15 +95,19 @@ public class Movement : MonoBehaviour
 		if (isGrounded == true) {
 			if (horizontalMovement)
 				currentMovement = movementType.walk;
-			else 
+
+			if (Input.GetAxis ("Horizontal") == 0)
+				currentMovement = movementType.stand;
+
+			if (horizontalMovement && toggleRun)
+				currentMovement = movementType.run;
+
 			if (Input.GetKeyDown (KeyCode.Space))
 				currentMovement = movementType.jump;
-			else 
-				if (horizontalMovement && toggleRun)
-				currentMovement = movementType.run;
 		}
-	}
 
+	}
+	
 	/// <summary>
 	/// Left/Right & Jump Movement
 	/// </summary>
@@ -115,6 +124,7 @@ public class Movement : MonoBehaviour
 		//Jump code:
 		if (currentMovement == movementType.jump && isGrounded == true) {
 			rigidbody.AddForce (Vector3.up * JumpPower, ForceMode.Impulse);
+			isGrounded = false;
 		}
 	}
 	
@@ -122,10 +132,9 @@ public class Movement : MonoBehaviour
 	{
 		Debug.DrawRay (transform.position, -Vector3.up); //remove when done testing
 
-		if (Physics.Raycast (transform.position, -Vector3.up, distanceToGround + 0.1f)) {
+		if (Physics.Raycast (transform.position, -Vector3.up, 0.1f)) {
 			isGrounded = true;
 		} else
 			isGrounded = false;
 	}
-
 }
